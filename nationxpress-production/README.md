@@ -1,0 +1,66 @@
+# NationXpress Enterprises — Netlify + Supabase website
+
+A responsive B2B logistics website with a private, Supabase-backed operations dashboard.
+
+## What works when configured
+
+- Public website: homepage, services, network, company information, carrier tracking links, quote form.
+- Enquiries: quote submissions stored in Supabase with restricted staff read access.
+- Staff login: Supabase email/password authentication. Authenticated users must ALSO be in `staff_profiles` with `active=true` to access data.
+- Operations: searchable shipment register, statuses, shipment editor, carrier filter, party-wise rate editor, cost/revenue/margin estimates, action alerts, and CSV MIS/billing/rate exports.
+- CSV import: matches headers, validates data, ignores duplicates by `(vendor,docket)`; up to 500 rows per upload. Data saved in Supabase, not localStorage.
+
+## Important limitations
+
+- **Not deployed yet** until a Netlify account owner performs the setup below. A connected GitHub account alone does not grant Netlify access.
+- You must initialize a Supabase project and supply its URL and **publishable/anon** key in `config.js`. **Never use a service_role / secret key** in client-side code.
+- Import supports CSV, not `.xlsx` or scanned PDF. For Excel, export as CSV first.
+- Sample cost calculation = chargeable weight × rate. Excludes GST, ODA, TDD, fuel, minimum docket, taxes, insurance, volume weight calculations, and vendor-specific terms.
+- The shipment list loads up to 5,000 most recent records; leads up to 500. Pagination will be needed for larger production data.
+- Tracking buttons open official carrier websites. No live integrated carrier APIs are included.
+- This does **not** send emails or notify staff of quotes. Enquiries appear in the portal.
+- Public quote inserts are authenticated by database rules for admin reads, but no rate limit/CAPTCHA exists yet. Before attracting large traffic, add Turnstile/edge-function rate limiting and anti-spam protections.
+- GA4 remains disabled pending a consent mechanism. `GA4_ID` is only a placeholder.
+- No staff user is hardcoded. The very first user must be registered and explicitly authorized in Supabase.
+- No real shipment/customer data is bundled. Testing with sensitive records should follow a security review.
+
+## 1. Create Supabase free project
+
+1. Visit https://supabase.com/dashboard and create a project.
+2. Open **SQL Editor**, paste the complete `supabase/schema.sql`, and run it.
+3. Open **Authentication > Providers**. Configure email/password sign-in; disable public self-signup for a staff-only portal, or restrict signups by invitation.
+4. Under **Authentication > Users**, invite or create your first staff user, then copy their **UUID**.
+5. In **SQL Editor**, run (replace placeholder):
+   ```sql
+   insert into public.staff_profiles (user_id,display_name,role,active)
+   values ('REAL-USER-UUID', 'NationXpress Admin','admin',true);
+   ```
+6. In **Project Settings > API**, copy the **Project URL** and **publishable/anon key** into `config.js`. These are public browser credentials, unlike the `service_role` key.
+7. Verify email confirmation and login. Check that unapproved authenticated users cannot query shipment/rate/enquiry rows.
+
+## 2. Publish to Netlify for free
+
+**Option A: Netlify Drop (fastest).** Open https://app.netlify.com/drop and drag the extracted `nationxpress-production` folder into Netlify. It is a static site: no build command required. Deployment creates a free `*.netlify.app` address (subject to availability).
+
+**Option B: Connect GitHub (best for updates).** Place website files at the repository root of a dedicated NationXpress repository, or in a `nationxpress-production/` folder of another repository. In Netlify choose **Add new project > Import from Git > GitHub**, then select the repo. If stored in a subfolder, set **Base directory** and **Publish directory** to that folder, with no build command. Configure deploy previews and choose your free site subdomain.
+
+## 3. Smoke test
+
+- Submit a quote and see it in staff portal.
+- Log in with approved staff and verify unauthorized users are rejected.
+- Create a rate for a customer name and carrier, then add a shipment with the same carrier and from-party name.
+- Confirm totals and missing-rate flags, then export the MIS CSV.
+- Try uploading a small CSV with the headers specified in the workspace.
+- Check mobile menu, tracking links, and the login route on a published Netlify URL.
+
+## Typical CSV headers
+
+`Docket Number,Weight,Date,From Party Name,Ship-To Party Name,From Location,Ship-To Location,ART,Vendor,Status,Billing Status`
+
+Accepted dates: `YYYY-MM-DD`, `DD/MM/YYYY`, and `DD-Mon-YY`. Enclose commas inside quoted CSV fields.
+
+## Developer notes
+
+No npm install required. Files are static HTML/CSS/JavaScript; `app.js` imports Supabase JS from esm.sh. For local development use `python -m http.server 8000` and visit http://localhost:8000 (do not use file:// for ES modules). Deploy over HTTPS.
+
+Run the site through a security and accessibility QA review before using it with confidential customer information. Consider automated backups, document storage permissions, audit logs, more robust rate rules and customer accounts as a later phase.
