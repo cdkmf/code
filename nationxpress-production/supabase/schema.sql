@@ -13,7 +13,7 @@ create table if not exists public.staff_profiles (
 );
 
 create or replace function public.is_nx_staff()
-returns boolean language sql stable security definer set search_path = ''
+returns boolean language sql stable security invoker set search_path = ''
 as $$
   select exists (
     select 1 from public.staff_profiles sp
