@@ -6,6 +6,7 @@ let supabase, session = null, staff = null, shipments = [], rates = [], leads = 
 let editorMode = '', editingId = null;
 let currentTab = 'shipments';
 let currentQuoteLock = false;
+const WhatsAppNumber = '917573969762';
 const vendors = ['Delhivery', 'Blue Dart', 'Gati', 'Trackon', 'Rivigo', 'Skyjets', 'MOVIN', 'Other'];
 const rupees = n => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
 const escapeHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
@@ -28,6 +29,15 @@ const route = () => {
   if(portal) { if(!session || !staff) showLogin(); else showApp(); window.scrollTo({top:0, behavior:'instant'}); }
 };
 window.addEventListener('hashchange', route);
+$('quickWhatsappForm').addEventListener('submit', event => {
+  event.preventDefault();
+  const fd = new FormData(event.currentTarget);
+  const origin = String(fd.get('origin') || '').trim(), destination = String(fd.get('destination') || '').trim();
+  const weight = Number(fd.get('weight'));
+  if (!/^\d{6}$/.test(origin) || !/^\d{6}$/.test(destination) || !Number.isFinite(weight) || weight <= 0) return;
+  const message = `Hello NationXpress, please quote my B2B shipment.\nPickup PIN: ${origin}\nDelivery PIN: ${destination}\nWeight: ${weight} kg\nPlease share service options and pricing.`;
+  window.open(`https://wa.me/${WhatsAppNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+});
 $('trackingForm').addEventListener('submit', e => { e.preventDefault(); const carrier = $('trackCarrier').value; if (!/^https:\/\//.test(carrier)) return; window.open(carrier, '_blank', 'noopener,noreferrer'); });
 if (!configured) {
   $('setupMessage').textContent = 'Database connection is not configured. Add your Supabase project URL and publishable key in config.js to activate secure login and enquiries.';
@@ -120,8 +130,8 @@ function renderShipments(){let q=$('shipmentSearch').value.trim().toLowerCase(),
   $('shipmentVendor').innerHTML='<option value="">All carriers</option>'+vendors.concat([...new Set(shipments.map(s=>s.vendor))].filter(v=>!vendors.includes(v))).map(x=>`<option value="${escapeHtml(x)}" ${x===v?'selected':''}>${escapeHtml(x)}</option>`).join('');
 }
 function renderRates(){ $('rateRows').innerHTML = rates.map(r=>`<tr><td>${escapeHtml(r.vendor)}</td><td>${escapeHtml(r.party)}</td><td>${rupees(r.cost_per_kg)}</td><td>${rupees(r.sell_per_kg)}</td><td>${rupees(Number(r.sell_per_kg)-Number(r.cost_per_kg))}</td><td><button class="table-button" data-edit-rate="${escapeHtml(r.id)}">Edit</button></td></tr>`).join('') || '<tr><td colspan="6" class="empty">No party rates yet.</td></tr>'; }
-function renderLeads(){ $('leadRows').innerHTML = leads.map(l=>`<tr><td>${new Date(l.created_at).toLocaleDateString('en-IN')}</td><td>${escapeHtml(l.company)}</td><td>${escapeHtml(l.contact_name)}</td><td><a href="mailto:${encodeURIComponent(l.email)}">${escapeHtml(l.email)}</a></td><td>${escapeHtml(l.phone)}</td><td>${escapeHtml(l.origin_pin)} → ${escapeHtml(l.destination_pin)}</td><td>${escapeHtml(l.service)}</td><td>${escapeHtml(l.weight_kg)} kg</td></tr>`).join('') || '<tr><td colspan="8" class="empty">No online enquiries received.</td></tr>'; }
-function pendingActions(){let a=[];shipments.forEach(s=>{if(!rateFor(s))a.push({title:'Missing customer/vendor rate',detail:`${s.docket} · ${s.from_party} · ${s.vendor}`});if(s.status==='Exception')a.push({title:'Delivery exception',detail:`${s.docket} · ${s.ship_to_party}`});else if(s.status!=='Delivered')a.push({title:'Delivery follow-up',detail:`${s.docket} · ${s.status}`});if(s.billing_status!=='Reconciled')a.push({title:'Billing / reconciliation pending',detail:`${s.docket} · ${s.billing_status}`});const amt=amounts(s);if(amt&&amt.margin<0)a.push({title:'Negative margin — check rates',detail:`${s.docket} · ${rupees(amt.margin)}`});if(!s.ship_to_party||!s.from_location||!s.ship_to_location)a.push({title:'Missing shipment fields',detail:s.docket});});return a;}
+function renderLeads(){ $('leadRows').innerHTML = leads.map(l=>{const customerPhone=String(l.phone||'').replace(/\D/g,'');const digits=customerPhone.length===10?'91'+customerPhone:customerPhone;const safePhone=/^[1-9]\d{9,14}$/.test(digits)?digits:'';const message=encodeURIComponent(`Hello ${l.contact_name}, this is NationXpress Enterprises regarding your freight enquiry from ${l.origin_pin} to ${l.destination_pin}.`);return `<tr><td>${new Date(l.created_at).toLocaleDateString('en-IN')}</td><td>${escapeHtml(l.company)}</td><td>${escapeHtml(l.contact_name)}</td><td><a href="mailto:${encodeURIComponent(l.email)}">${escapeHtml(l.email)}</a></td><td>${escapeHtml(l.phone)}</td><td>${escapeHtml(l.origin_pin)} → ${escapeHtml(l.destination_pin)}</td><td>${escapeHtml(l.service)}</td><td>${escapeHtml(l.weight_kg)} kg</td><td><select class="lead-status" data-lead-status="${escapeHtml(l.id)}" aria-label="Enquiry status">${['New','Contacted','Quoted','Won','Lost'].map(v=>`<option value="${v}" ${l.status===v?'selected':''}>${v}</option>`).join('')}</select></td><td>${safePhone?`<a class="lead-action" target="_blank" rel="noopener noreferrer" href="https://wa.me/${safePhone}?text=${message}">WhatsApp ↗</a>`:'—'}</td></tr>`;}).join('') || '<tr><td colspan="10" class="empty">No online enquiries received.</td></tr>'; }
+function pendingActions(){let a=[];leads.filter(l=>!l.status||l.status==='New').forEach(l=>a.push({title:'New quotation enquiry',detail:`${l.company} · ${l.phone} · ${l.origin_pin} → ${l.destination_pin}`}));shipments.forEach(s=>{if(!rateFor(s))a.push({title:'Missing customer/vendor rate',detail:`${s.docket} · ${s.from_party} · ${s.vendor}`});if(s.status==='Exception')a.push({title:'Delivery exception',detail:`${s.docket} · ${s.ship_to_party}`});else if(s.status!=='Delivered')a.push({title:'Delivery follow-up',detail:`${s.docket} · ${s.status}`});if(s.billing_status!=='Reconciled')a.push({title:'Billing / reconciliation pending',detail:`${s.docket} · ${s.billing_status}`});const amt=amounts(s);if(amt&&amt.margin<0)a.push({title:'Negative margin — check rates',detail:`${s.docket} · ${rupees(amt.margin)}`});if(!s.ship_to_party||!s.from_location||!s.ship_to_location)a.push({title:'Missing shipment fields',detail:s.docket});});return a;}
 function renderActions(){const actions=pendingActions();$('actionRows').innerHTML=actions.length?actions.slice(0,200).map(a=>`<div class="action-item"><strong>${escapeHtml(a.title)}</strong><small>${escapeHtml(a.detail)}</small></div>`).join(''):'<div class="empty">No outstanding exceptions in the loaded records.</div>';}
 function renderAll(){stats();renderShipments();renderRates();renderLeads();renderActions();}
 $('shipmentSearch').addEventListener('input',renderShipments);$('shipmentVendor').addEventListener('change',renderShipments);$('shipmentStatus').addEventListener('change',renderShipments);
@@ -221,3 +231,16 @@ function downloadCsv(filename,headers,rows){const csv='\uFEFF'+[headers,...rows]
 $('exportMis').addEventListener('click',()=>downloadCsv('nationxpress-shipment-mis.csv',['Docket Number','Weight','Date','From Party Name','Ship-To Party Name','From Location','Ship-To Location','ART'],shipments.map(s=>[s.docket,s.weight_kg,s.shipment_date,s.from_party,s.ship_to_party,s.from_location,s.ship_to_location,s.art])));
 $('exportBilling').addEventListener('click',()=>downloadCsv('nationxpress-billing.csv',['Docket Number','Date','Vendor','From Party','Ship-To Party','Weight','Cost/kg','Bill/kg','Vendor Cost','Customer Billing','Gross Margin','Shipment Status','Billing Status'],shipments.map(s=>{let r=rateFor(s),a=amounts(s);return[s.docket,s.shipment_date,s.vendor,s.from_party,s.ship_to_party,s.weight_kg,r?.cost_per_kg??'',r?.sell_per_kg??'',a?.cost??'',a?.billing??'',a?.margin??'',s.status,s.billing_status]})));
 $('exportRates').addEventListener('click',()=>downloadCsv('nationxpress-party-rates.csv',['Vendor','Customer Party','Cost per kg','Billing per kg'],rates.map(r=>[r.vendor,r.party,r.cost_per_kg,r.sell_per_kg])));
+
+$('leadRows').addEventListener('change', async event => {
+  const target = event.target;
+  if (!target.matches('[data-lead-status]') || !supabase || !staff) return;
+  const id=target.dataset.leadStatus, next=target.value;
+  if (!['New','Contacted','Quoted','Won','Lost'].includes(next)) return;
+  const lead=leads.find(l=>l.id===id); if(!lead)return;
+  const previous=lead.status||'New';target.disabled=true;
+  const {error}=await supabase.from('quote_leads').update({status:next}).eq('id',id);
+  target.disabled=false;
+  if(error){target.value=previous;alert('Could not save status. Check Supabase policies.');return;}
+  lead.status=next;renderActions();
+});

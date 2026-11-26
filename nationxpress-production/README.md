@@ -64,3 +64,9 @@ Accepted dates: `YYYY-MM-DD`, `DD/MM/YYYY`, and `DD-Mon-YY`. Enclose commas insi
 No npm install required. Files are static HTML/CSS/JavaScript; `app.js` imports Supabase JS from esm.sh. For local development use `python -m http.server 8000` and visit http://localhost:8000 (do not use file:// for ES modules). Deploy over HTTPS.
 
 Run the site through a security and accessibility QA review before using it with confidential customer information. Consider automated backups, document storage permissions, audit logs, more robust rate rules and customer accounts as a later phase.
+
+## WhatsApp-first quote experience
+
+The public homepage prominently displays the owner-provided WhatsApp number **+91 75739 69762**. The fast three-field quote form opens WhatsApp with a pre-filled message (the visitor must press Send in WhatsApp; it does **not** automatically create a database lead). The full quotation form writes to `public.quote_leads` when Supabase is configured. Only authorized staff can read the leads table. The operations dashboard shows a WhatsApp reply link and statuses **New, Contacted, Quoted, Won, Lost**.
+
+For a new database, run `supabase/schema.sql`. If the previous schema was already applied, run `supabase/upgrade_quotes.sql` instead to add lead status and staff update access. Never publicly share the service role key. This site does not automatically send owner notifications or read WhatsApp messages. The owner must review new enquiries in the portal; future notifications require a secure server-side integration with explicit consent and anti-spam measures.

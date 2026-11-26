@@ -66,6 +66,7 @@ create table if not exists public.quote_leads (
   weight_kg numeric(12,2) not null check(weight_kg>0 and weight_kg<=1000000),
   service text not null check(service in ('Surface freight','Air freight','Express courier','Corporate / recurring')),
   notes text not null default '' check(length(notes)<=2000),
+  status text not null default 'New' check(status in ('New','Contacted','Quoted','Won','Lost')),
   created_at timestamptz not null default now()
 );
 create index if not exists quote_leads_created_idx on public.quote_leads(created_at desc);
@@ -86,7 +87,7 @@ alter table public.quote_leads enable row level security;
 revoke all on public.staff_profiles,public.shipments,public.party_rates,public.quote_leads from anon, authenticated;
 grant select on public.staff_profiles to authenticated;
 grant select,insert,update,delete on public.shipments,public.party_rates to authenticated;
-grant select on public.quote_leads to authenticated;
+grant select, update on public.quote_leads to authenticated;
 grant insert on public.quote_leads to anon;
 
 -- Staff can only read their own role; nobody can self-promote using client credentials.
@@ -118,6 +119,8 @@ drop policy if exists "public may submit a quote" on public.quote_leads;
 create policy "public may submit a quote" on public.quote_leads for insert to anon with check (true);
 drop policy if exists "staff may read quotes" on public.quote_leads;
 create policy "staff may read quotes" on public.quote_leads for select to authenticated using ((select public.is_nx_staff()));
+drop policy if exists "staff may update quotes" on public.quote_leads;
+create policy "staff may update quotes" on public.quote_leads for update to authenticated using ((select public.is_nx_staff())) with check ((select public.is_nx_staff()));
 
 -- IMPORTANT FIRST STAFF BOOTSTRAP (run separately, after creating the user in Supabase Authentication):
 -- insert into public.staff_profiles(user_id,display_name,role,active)
