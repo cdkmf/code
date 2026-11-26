@@ -13,7 +13,7 @@ A responsive B2B logistics website with a private, Supabase-backed operations da
 ## Important limitations
 
 - **Not deployed yet** until a Netlify account owner performs the setup below. A connected GitHub account alone does not grant Netlify access.
-- You must initialize a Supabase project and supply its URL and **publishable/anon** key in `config.js`. **Never use a service_role / secret key** in client-side code.
+- Supabase project **NationXpress Enterprises** in `ap-south-1` has been created; schema migration applied and public project URL/publishable key configured in `config.js`. **Never use a service_role / secret key** in client-side code.
 - Import supports CSV, not `.xlsx` or scanned PDF. For Excel, export as CSV first.
 - Sample cost calculation = chargeable weight × rate. Excludes GST, ODA, TDD, fuel, minimum docket, taxes, insurance, volume weight calculations, and vendor-specific terms.
 - The shipment list loads up to 5,000 most recent records; leads up to 500. Pagination will be needed for larger production data.
@@ -24,19 +24,18 @@ A responsive B2B logistics website with a private, Supabase-backed operations da
 - No staff user is hardcoded. The very first user must be registered and explicitly authorized in Supabase.
 - No real shipment/customer data is bundled. Testing with sensitive records should follow a security review.
 
-## 1. Create Supabase free project
+## 1. Finish Supabase staff administration (project is already created)
 
-1. Visit https://supabase.com/dashboard and create a project.
-2. Open **SQL Editor**, paste the complete `supabase/schema.sql`, and run it.
-3. Open **Authentication > Providers**. Configure email/password sign-in; disable public self-signup for a staff-only portal, or restrict signups by invitation.
-4. Under **Authentication > Users**, invite or create your first staff user, then copy their **UUID**.
-5. In **SQL Editor**, run (replace placeholder):
+1. Open the existing project at https://supabase.com/dashboard/project/cjdvzcftqtpmzofohguq. The database schema has already been deployed. Do not rerun it unless you intend to update the schema.
+2. Open **Authentication > Providers**. Configure email/password sign-in; disable public self-signup for a staff-only portal, or restrict signups by invitation.
+3. Under **Authentication > Users**, invite or create your first staff user, then copy their **UUID**.
+4. In **SQL Editor**, run (replace placeholder):
    ```sql
    insert into public.staff_profiles (user_id,display_name,role,active)
    values ('REAL-USER-UUID', 'NationXpress Admin','admin',true);
    ```
-6. In **Project Settings > API**, copy the **Project URL** and **publishable/anon key** into `config.js`. These are public browser credentials, unlike the `service_role` key.
-7. Verify email confirmation and login. Check that unapproved authenticated users cannot query shipment/rate/enquiry rows.
+5. Project URL and publishable key are already in `config.js`. These are public browser credentials, unlike the `service_role` key.
+6. Verify email confirmation and login. Check that unapproved authenticated users cannot query shipment/rate/enquiry rows.
 
 ## 2. Publish to Netlify for free
 
