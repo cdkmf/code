@@ -34,8 +34,9 @@ $('quickWhatsappForm').addEventListener('submit', event => {
   const fd = new FormData(event.currentTarget);
   const origin = String(fd.get('origin') || '').trim(), destination = String(fd.get('destination') || '').trim();
   const weight = Number(fd.get('weight'));
+  const pickup = String(fd.get('pickup') || 'Check same-day pickup');
   if (!/^\d{6}$/.test(origin) || !/^\d{6}$/.test(destination) || !Number.isFinite(weight) || weight <= 0) return;
-  const message = `Hello NationXpress, please quote my B2B shipment.\nPickup PIN: ${origin}\nDelivery PIN: ${destination}\nWeight: ${weight} kg\nPlease share service options and pricing.`;
+  const message = `Hello NationXpress, I need a B2B shipment quotation.\nPickup PIN: ${origin}\nDelivery PIN: ${destination}\nWeight: ${weight} kg\nRequest: ${pickup}\nPlease check pickup serviceability, cutoff time and applicable freight charges.`;
   window.open(`https://wa.me/${WhatsAppNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
 });
 $('trackingForm').addEventListener('submit', e => { e.preventDefault(); const carrier = $('trackCarrier').value; if (!/^https:\/\//.test(carrier)) return; window.open(carrier, '_blank', 'noopener,noreferrer'); });

@@ -69,3 +69,11 @@ Run the site through a security and accessibility QA review before using it with
 The public homepage prominently displays the owner-provided WhatsApp number **+91 75739 69762**. The fast three-field quote form opens WhatsApp with a pre-filled message (the visitor must press Send in WhatsApp; it does **not** automatically create a database lead). The full quotation form writes to `public.quote_leads` when Supabase is configured. Only authorized staff can read the leads table. The operations dashboard shows a WhatsApp reply link and statuses **New, Contacted, Quoted, Won, Lost**.
 
 For a new database, run `supabase/schema.sql`. If the previous schema was already applied, run `supabase/upgrade_quotes.sql` instead to add lead status and staff update access. Never publicly share the service role key. This site does not automatically send owner notifications or read WhatsApp messages. The owner must review new enquiries in the portal; future notifications require a secure server-side integration with explicit consent and anti-spam measures.
+
+## Conversion-focused homepage update (November 2026)
+
+The new homepage highlights same-day pickup **requests**, not guaranteed fulfillment. All pickups depend on location, booking cutoff, carrier availability and shipment readiness. It includes a service-first headline, immediate WhatsApp enquiry flow, corporate rate CTA, pickup explainer, industries served, FAQs, mobile contact bar and improved SEO description.
+
+WhatsApp enquiries open in WhatsApp and are **not automatically stored** in Supabase. The detailed quote form stores leads in Supabase; authorized staff can review them under Enquiries. Do not imply automatic WhatsApp lead capture.
+
+To publish changes to existing Netlify site, ensure it is connected to repository `cdkmf/code`, production branch `master`, base directory `nationxpress-production`, build command empty and publish directory `.`. Netlify must deploy the latest commit. Confirm in Deploys and test the live site.
