@@ -1,5 +1,22 @@
 # NationXpress Enterprises — Netlify + Supabase website
 
+## Live NationXpress Netlify address
+
+Public production URL: **https://natxenterprises.netlify.app/** (the previously supplied Netlify site name was replaced; use this new domain in all customer-facing communications).
+
+Deployment source: GitHub repository `cdkmf/code`, branch `master`, folder `nationxpress-production`. Base directory `nationxpress-production`, build command empty, publish directory `.`.
+
+When changes are committed to `master`, Netlify will update the site automatically **only if this specific Netlify site is linked to the same repository and branch with continuous deployment enabled**. Check Netlify > site > Deploys for the latest production commit, and trigger a deploy manually if needed. Avoid creating a second Netlify site.
+
+Website quotation enquiries go into the connected Supabase project `cjdvzcftqtpmzofohguq`. WhatsApp `+91 7573969762` opens a chat but does not automatically capture messages in the database. Admin portal needs an authorized staff user.
+
+### How to verify this revision
+- Open https://natxenterprises.netlify.app/ and confirm the same-day pickup, services and FAQs are visible
+- Open https://natxenterprises.netlify.app/config.js and check the production Supabase URL is present (public publishable key only; never publish a secret)
+- Open https://natxenterprises.netlify.app/sitemap.xml to check the new domain appears
+- Confirm quote submission works; see it in Supabase Table Editor, then verify your staff login can access the portal once authorized
+
+
 A responsive B2B logistics website with a private, Supabase-backed operations dashboard.
 
 ## What works when configured
